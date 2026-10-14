@@ -10,7 +10,7 @@ import {
   toPrismaDate,
 } from './attendance-date.util.js';
 import type { AttendanceHistoryQueryDto } from './dto/attendance-history-query.dto.js';
-
+import type { AttendanceOverviewQueryDto } from './dto/attendance-overview-query.dto.js';
 
 @Injectable()
 export class AttendanceService {
@@ -293,6 +293,80 @@ export class AttendanceService {
     return {
       ...attendance,
       attendanceDate: attendance.attendanceDate.toISOString().slice(0, 10),
+    };
+  }
+
+  async getEmployeeOverview(query: AttendanceOverviewQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+
+    let fromDate: Date | undefined;
+    let toDate: Date | undefined;
+
+    try {
+      if (query.from) {
+        fromDate = toPrismaDate(query.from);
+      }
+
+      if (query.to) {
+        toDate = toPrismaDate(query.to);
+      }
+    } catch {
+      throw new BadRequestException(
+        'from and to must be valid calendar dates in YYYY-MM-DD format.',
+      );
+    }
+
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new BadRequestException(
+        'from must be earlier than or equal to to.',
+      );
+    }
+
+    const attendanceDate: { gte?: Date; lte?: Date } = {};
+
+    if (fromDate) {
+      attendanceDate.gte = fromDate;
+    }
+
+    if (toDate) {
+      attendanceDate.lte = toDate;
+    }
+
+    const where = Object.keys(attendanceDate).length
+      ? { attendanceDate }
+      : {};
+
+    const [records, total] = await this.prisma.$transaction([
+      this.prisma.attendance.findMany({
+        where,
+        include: {
+          employee: {
+            select: {
+              companyEmail: true,
+              fullName: true,
+            },
+          },
+        },
+        orderBy: [
+          { attendanceDate: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.attendance.count({ where }),
+    ]);
+
+    return {
+      data: records.map((record) => ({
+        ...record,
+        attendanceDate: record.attendanceDate.toISOString().slice(0, 10),
+      })),
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
     };
   }
 }

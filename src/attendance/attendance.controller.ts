@@ -40,6 +40,8 @@ import {
     AttendanceHistoryResponseDto,
     AttendanceSummaryResponseDto,
 } from './dto/attendance-report.dto.js';
+import { AttendanceOverviewQueryDto } from './dto/attendance-overview-query.dto.js';
+import { AttendanceOverviewResponseDto } from './dto/attendance-overview-response.dto.js';
 
 @ApiTags('Attendance')
 @ApiBearerAuth()
@@ -48,7 +50,7 @@ import {
 export class AttendanceController {
     constructor(
         private readonly attendanceService: AttendanceService,
-    ) {}
+    ) { }
 
     @Post('check-in')
     @ApiOperation({
@@ -339,5 +341,74 @@ export class AttendanceController {
         @Query() query: AttendanceMonthQueryDto,
     ) {
         return this.attendanceService.getEmployeeSummary(id, query.month);
+    }
+    
+    @Get('employees/history')
+    @UseGuards(RolesGuard)
+    @Roles('HR')
+    @ApiOperation({
+        summary: 'Get attendance across all employees (HR only)',
+        description:
+            'Returns paginated attendance records across employees. Optional from/to filters are inclusive Jakarta calendar dates.',
+    })
+    @ApiQuery({
+        name: 'from',
+        required: false,
+        type: String,
+        example: '2026-10-01',
+        description: 'Inclusive start date (YYYY-MM-DD).',
+    })
+    @ApiQuery({
+        name: 'to',
+        required: false,
+        type: String,
+        example: '2026-10-14',
+        description: 'Inclusive end date (YYYY-MM-DD).',
+    })
+    @ApiQuery({
+        name: 'page',
+        required: false,
+        type: Number,
+        example: 1,
+    })
+    @ApiQuery({
+        name: 'limit',
+        required: false,
+        type: Number,
+        example: 10,
+    })
+    @ApiOkResponse({
+        description: 'Attendance overview retrieved successfully.',
+        type: AttendanceOverviewResponseDto,
+        example: {
+            data: [
+                {
+                    id: 'c8b30f5e-88cb-4c6e-8bb1-13a3b6cb20a1',
+                    employeeId: '21824689-4c8c-4e66-b9d1-70024e9ffc2f',
+                    employee: {
+                        companyEmail: 'employee@company.com',
+                        fullName: 'Test Employee',
+                    },
+                    attendanceDate: '2026-10-14',
+                    checkInAt: '2026-10-14T01:05:00.000Z',
+                    checkOutAt: '2026-10-14T10:02:00.000Z',
+                    createdAt: '2026-10-14T01:05:00.000Z',
+                    updatedAt: '2026-10-14T10:02:00.000Z',
+                },
+            ],
+            page: 1,
+            limit: 10,
+            total: 1,
+            totalPages: 1,
+        },
+    })
+    @ApiBadRequestResponse({
+        description: 'Invalid date or pagination parameters.',
+    })
+    @ApiForbiddenResponse({
+        description: 'HR role required.',
+    })
+    getEmployeeOverview(@Query() query: AttendanceOverviewQueryDto) {
+        return this.attendanceService.getEmployeeOverview(query);
     }
 }
