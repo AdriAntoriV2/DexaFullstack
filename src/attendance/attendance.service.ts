@@ -165,30 +165,82 @@ export class AttendanceService {
   }
 
 
+
   async getMyHistory(
     employeeId: string,
     query: AttendanceHistoryQueryDto,
   ) {
-    return this.getHistory(employeeId, query);
+    return this.getHistory(employeeId, query, true);
   }
 
   async getEmployeeHistory(
     employeeId: string,
     query: AttendanceHistoryQueryDto,
   ) {
-    return this.getHistory(employeeId, query);
+    return this.getHistory(employeeId, query, false);
   }
 
   private async getHistory(
     employeeId: string,
     query: AttendanceHistoryQueryDto,
+    useCurrentMonthDefault: boolean,
   ) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
 
+    let from = query.from;
+    let to = query.to;
+
+    // Default only when the employee provides neither date filter.
+    if (useCurrentMonthDefault && !from && !to) {
+      const today = getJakartaDate();
+      from = `${today.slice(0, 7)}-01`;
+      to = today;
+    }
+
+    let fromDate: Date | undefined;
+    let toDate: Date | undefined;
+
+    try {
+      if (from) {
+        fromDate = toPrismaDate(from);
+      }
+
+      if (to) {
+        toDate = toPrismaDate(to);
+      }
+    } catch {
+      throw new BadRequestException(
+        'from and to must be valid calendar dates in YYYY-MM-DD format.',
+      );
+    }
+
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new BadRequestException(
+        'from must be earlier than or equal to to.',
+      );
+    }
+
+    const attendanceDate: { gte?: Date; lte?: Date } = {};
+
+    if (fromDate) {
+      attendanceDate.gte = fromDate;
+    }
+
+    if (toDate) {
+      attendanceDate.lte = toDate;
+    }
+
+    const where = {
+      employeeId,
+      ...(Object.keys(attendanceDate).length > 0
+        ? { attendanceDate }
+        : {}),
+    };
+
     const [records, total] = await this.prisma.$transaction([
       this.prisma.attendance.findMany({
-        where: { employeeId },
+        where,
         orderBy: [
           { attendanceDate: 'desc' },
           { createdAt: 'desc' },
@@ -205,9 +257,7 @@ export class AttendanceService {
           updatedAt: true,
         },
       }),
-      this.prisma.attendance.count({
-        where: { employeeId },
-      }),
+      this.prisma.attendance.count({ where }),
     ]);
 
     return {
@@ -218,6 +268,7 @@ export class AttendanceService {
       totalPages: Math.ceil(total / limit),
     };
   }
+
 
   async getMySummary(employeeId: string, month: string) {
     return this.getSummary(employeeId, month);

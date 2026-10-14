@@ -1,6 +1,16 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { compare, hash } from 'bcryptjs';
+
+vi.mock('bcryptjs', () => ({
+  compare: vi.fn(),
+  hash: vi.fn(),
+}));
 
 import { EmployeesService } from './employees.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -65,4 +75,63 @@ describe('EmployeesService', () => {
       }),
     ).rejects.toThrow(ConflictException);
   });
+
+
+  it('changes password when the current password is correct', async () => {
+    prisma.employee.findUnique.mockResolvedValue({
+      passwordHash: 'old-hash',
+    });
+    vi.mocked(compare).mockImplementation(async () => true);
+    vi.mocked(hash).mockImplementation(async () => 'new-hash');
+    prisma.employee.update.mockResolvedValue({});
+
+    await expect(
+      service.changeMyPassword(
+        'employee-1',
+        'CurrentPassword123',
+        'NewPassword456',
+      ),
+    ).resolves.toEqual({ message: 'Password changed successfully' });
+
+    expect(compare).toHaveBeenCalledWith(
+      'CurrentPassword123',
+      'old-hash',
+    );
+    expect(hash).toHaveBeenCalledWith('NewPassword456', 12);
+    expect(prisma.employee.update).toHaveBeenCalledWith({
+      where: { id: 'employee-1' },
+      data: { passwordHash: 'new-hash' },
+    });
+  });
+
+  it('rejects a password change when the current password is incorrect', async () => {
+    prisma.employee.findUnique.mockResolvedValue({
+      passwordHash: 'old-hash',
+    });
+    vi.mocked(compare).mockImplementation(async () => false);
+    await expect(
+      service.changeMyPassword(
+        'employee-1',
+        'WrongPassword123',
+        'NewPassword456',
+      ),
+    ).rejects.toThrow(UnauthorizedException);
+
+    expect(prisma.employee.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects a password change when the employee does not exist', async () => {
+    prisma.employee.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.changeMyPassword(
+        'missing-id',
+        'CurrentPassword123',
+        'NewPassword456',
+      ),
+    ).rejects.toThrow(NotFoundException);
+
+    expect(prisma.employee.update).not.toHaveBeenCalled();
+  });
+
 });

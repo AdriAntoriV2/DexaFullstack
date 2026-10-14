@@ -193,24 +193,27 @@ export class AttendanceController {
     }
 
     @Get('me/history')
+
     @ApiOperation({
         summary: 'Get my attendance history',
-        description: 'Returns paginated attendance records for the authenticated employee.',
+        description:
+            'Returns paginated daily attendance records. Defaults to the first day of the current Jakarta month through today. Optional from/to dates are inclusive.',
     })
     @ApiQuery({
-        name: 'page',
+        name: 'from',
         required: false,
-        type: Number,
-        example: 1,
-        description: 'Page number, starting at 1.',
+        type: String,
+        example: '2026-10-01',
+        description: 'Inclusive start date in YYYY-MM-DD format.',
     })
     @ApiQuery({
-        name: 'limit',
+        name: 'to',
         required: false,
-        type: Number,
-        example: 10,
-        description: 'Number of records per page (1–100).',
+        type: String,
+        example: '2026-10-14',
+        description: 'Inclusive end date in YYYY-MM-DD format.',
     })
+
     @ApiOkResponse({
         description: 'Paginated attendance history.',
         type: AttendanceHistoryResponseDto,
@@ -342,7 +345,7 @@ export class AttendanceController {
     ) {
         return this.attendanceService.getEmployeeSummary(id, query.month);
     }
-    
+
     @Get('employees/history')
     @UseGuards(RolesGuard)
     @Roles('HR')

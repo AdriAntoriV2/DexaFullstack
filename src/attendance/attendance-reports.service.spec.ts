@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AttendanceService } from './attendance.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { getJakartaDate } from './attendance-date.util.js';
 
 describe('AttendanceService reports', () => {
   const prisma = {
@@ -18,6 +19,13 @@ describe('AttendanceService reports', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+
+    // Simulate Prisma's array-form transaction resolving both queries.
+    prisma.$transaction.mockImplementation(
+      async (queries: Promise<unknown>[]) =>
+        Promise.all(queries),
+    );
+
     service = new AttendanceService(
       prisma as unknown as PrismaService,
     );
@@ -36,7 +44,8 @@ describe('AttendanceService reports', () => {
       },
     ];
 
-    prisma.$transaction.mockResolvedValue([records, 21]);
+    prisma.attendance.findMany.mockResolvedValue(records);
+    prisma.attendance.count.mockResolvedValue(21);
 
     const result = await service.getMyHistory('employee-1', {
       page: 2,
@@ -76,13 +85,13 @@ describe('AttendanceService reports', () => {
 
     expect(prisma.attendance.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
+        where: {
           employeeId: 'employee-1',
           attendanceDate: {
             gte: new Date('2026-10-01T00:00:00.000Z'),
             lt: new Date('2026-11-01T00:00:00.000Z'),
           },
-        }),
+        },
       }),
     );
   });
@@ -93,5 +102,110 @@ describe('AttendanceService reports', () => {
     ).rejects.toThrow(BadRequestException);
 
     expect(prisma.attendance.findMany).not.toHaveBeenCalled();
+  });
+
+  it('defaults my history to the current Jakarta month through today', async () => {
+    prisma.attendance.findMany.mockResolvedValue([]);
+    prisma.attendance.count.mockResolvedValue(0);
+
+    const result = await service.getMyHistory('employee-1', {
+      page: 1,
+      limit: 10,
+    });
+
+    const today = getJakartaDate();
+    const expectedFrom = `${today.slice(0, 7)}-01`;
+
+    expect(result.total).toBe(0);
+    expect(prisma.$transaction).toHaveBeenCalledOnce();
+
+    const expectedWhere = {
+      employeeId: 'employee-1',
+      attendanceDate: {
+        gte: new Date(`${expectedFrom}T00:00:00.000Z`),
+        lte: new Date(`${today}T00:00:00.000Z`),
+      },
+    };
+
+    expect(prisma.attendance.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expectedWhere }),
+    );
+
+    expect(prisma.attendance.count).toHaveBeenCalledWith({
+      where: expectedWhere,
+    });
+  });
+
+  it('filters my history by an explicitly requested date range', async () => {
+    prisma.attendance.findMany.mockResolvedValue([]);
+    prisma.attendance.count.mockResolvedValue(0);
+
+    await service.getMyHistory('employee-1', {
+      from: '2026-10-05',
+      to: '2026-10-10',
+      page: 1,
+      limit: 10,
+    });
+
+    const expectedWhere = {
+      employeeId: 'employee-1',
+      attendanceDate: {
+        gte: new Date('2026-10-05T00:00:00.000Z'),
+        lte: new Date('2026-10-10T00:00:00.000Z'),
+      },
+    };
+
+    expect(prisma.attendance.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expectedWhere }),
+    );
+
+    expect(prisma.attendance.count).toHaveBeenCalledWith({
+      where: expectedWhere,
+    });
+  });
+
+  it('rejects invalid calendar dates in my history filters', async () => {
+    await expect(
+      service.getMyHistory('employee-1', {
+        from: '2026-02-30',
+        page: 1,
+        limit: 10,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reversed date range in my history filters', async () => {
+    await expect(
+      service.getMyHistory('employee-1', {
+        from: '2026-10-10',
+        to: '2026-10-05',
+        page: 1,
+        limit: 10,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('does not apply the employee current-month default to HR history', async () => {
+    prisma.attendance.findMany.mockResolvedValue([]);
+    prisma.attendance.count.mockResolvedValue(0);
+
+    await service.getEmployeeHistory('employee-1', {
+      page: 1,
+      limit: 10,
+    });
+
+    expect(prisma.attendance.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { employeeId: 'employee-1' },
+      }),
+    );
+
+    expect(prisma.attendance.count).toHaveBeenCalledWith({
+      where: { employeeId: 'employee-1' },
+    });
   });
 });

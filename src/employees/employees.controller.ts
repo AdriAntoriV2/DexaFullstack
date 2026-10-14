@@ -27,13 +27,14 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../auth/strategies/jwt.strategy.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 
 @ApiTags('Employees')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('employees')
 export class EmployeesController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(private readonly employeesService: EmployeesService) { }
 
   @Get('me')
   @ApiOperation({ summary: 'Get my employee profile' })
@@ -94,4 +95,22 @@ export class EmployeesController {
   ) {
     return this.employeesService.updateByHr(id, dto);
   }
+
+  @Patch('me/password')
+  @ApiOperation({ summary: 'Change my password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body' })
+  @ApiResponse({ status: 401, description: 'Unauthorized or current password incorrect' })
+  @ApiResponse({ status: 404, description: 'Employee not found' })
+  changeMyPassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.employeesService.changeMyPassword(
+      user.sub,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+  }
+
 }
