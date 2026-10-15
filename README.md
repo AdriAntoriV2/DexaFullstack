@@ -1,124 +1,286 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Dexa Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A REST API for the Dexa WFH Attendance System, built with NestJS, TypeScript, PostgreSQL, and Prisma. It provides authentication, employee profile management, attendance tracking, and HR administration for the employee and HR web applications.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- **Authentication and authorization** — JWT-based authentication with employee and HR roles.
+- **Employee management** — Retrieve employee profiles, update profile information, and change passwords.
+- **Attendance management** — Check-in and check-out, retrieve daily attendance, view paginated attendance history, and retrieve monthly summaries.
+- **HR administration** — Employee administration and attendance reporting for authorized HR users.
+- **Notifications** — Notification retrieval and read-state management for HR.
+- **API documentation** — Interactive Swagger UI with documented request and response schemas and Bearer authentication.
+- **Input validation** — Request validation and transformation using NestJS validation pipes, `class-validator`, and `class-transformer`.
+- **Automated testing** — Unit tests, end-to-end tests, and coverage reporting using Vitest and Supertest.
+- **Database management** — PostgreSQL persistence and schema migrations using Prisma ORM.
+- **Event integration** — RabbitMQ configuration for integration with the wider Dexa system.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Technology Stack
 
-## Project setup
+| Technology | Purpose |
+|---|---|
+| NestJS 12 | Backend framework |
+| TypeScript | Application language |
+| PostgreSQL | Relational database |
+| Prisma ORM 7 | Database access and migrations |
+| `@prisma/adapter-pg` | PostgreSQL driver adapter |
+| Passport and JWT | Authentication |
+| `bcryptjs` | Password hashing |
+| `class-validator` and `class-transformer` | Request validation |
+| Swagger / OpenAPI | Interactive API documentation |
+| Vitest and Supertest | Automated testing |
+| RabbitMQ | Message-based integration |
 
-```bash
-$ npm install
+## Related repositories
+
+The backend is part of a four-repository project:
+
+- [dexa-employees](https://github.com/AdriAntoriV2/dexa-employees) — Employee-facing web application.
+- [dexa-hr](https://github.com/AdriAntoriV2/dexa-hr) — HR-facing web application.
+- [dexa-audit](https://github.com/AdriAntoriV2/dexa-audit) — Audit application.
+- **dexa-backend** — REST API and backend services.
+
+## Getting Started
+
+### Prerequisites
+
+Before running the backend, ensure you have:
+
+- Node.js and npm installed.
+- Access to a PostgreSQL database.
+- Access to a RabbitMQ instance if required by the enabled messaging integration.
+- Git installed.
+
+### 1. Clone the repository
+
+```text
+git clone https://github.com/AdriAntoriV2/dexa-backend.git
 ```
 
-## Compile and run the project
+Open a terminal in the cloned repository directory.
 
-```bash
-# development
-$ npm run start
+### 2. Install dependencies
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```text
+npm install
 ```
 
-## Run tests
+### 3. Configure environment variables
 
-```bash
-# unit tests
-$ npm run test
+Create a local `.env` file based on the provided `.env.example`.
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```text
+cp .env.example .env
 ```
 
-## Deployment
+Configure the variables with values for your local environment.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection URL used by the application. |
+| `DIRECT_URL` | Direct PostgreSQL connection URL used by Prisma tooling. |
+| `JWT_SECRET` | Secret used to sign and verify JWTs. |
+| `JWT_EXPIRES_IN` | JWT expiration duration. |
+| `HR_EMAIL` | Email for the initial HR account. |
+| `HR_PASSWORD` | Password for the initial HR account. |
+| `HR_FULL_NAME` | Full name for the initial HR account. |
+| `HR_POSITION` | Position for the initial HR account. |
+| `RABBITMQ_URL` | RabbitMQ connection URL. |
+| `CORS_HR` | Allowed origin for the HR frontend. |
+| `CORS_EMPLOYEES` | Allowed origin for the employee frontend. |
+| `PORT` | Optional server port; defaults to `3000`. |
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Use valid connection URLs and frontend origins for your setup. For local development, the frontend origins should match the addresses where the two web applications are running.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+**Security:** Never commit your actual `.env` file, database credentials, JWT secret, or HR account password. Use strong secrets and dedicated credentials outside local development.
+
+### 4. Generate the Prisma client
+
+```text
+npx prisma generate
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 5. Apply database migrations
 
-## Observability
+For a local development database, apply migrations with:
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
-
-```bash
-$ npm install @nestjs/observe
+```text
+npx prisma migrate dev
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+To seed the database using the configured Prisma seed command:
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+```text
+npx prisma db seed
+```
 
-## Resources
+The seed process uses the project's configured seed script. Review its implementation before running it against any database containing important data.
 
-Check out a few resources that may come in handy when working with NestJS:
+For a deployed environment, use the appropriate production migration workflow rather than development migrations.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 6. Start the application
 
-## Support
+Start the backend in watch mode:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```text
+npm run start:dev
+```
 
-## Stay in touch
+By default, the API listens on:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```text
+http://localhost:3000
+```
+
+## API Documentation
+
+The backend provides interactive Swagger documentation.
+
+Once the application is running, open:
+
+**[http://localhost:3000/docs](http://localhost:3000/docs)**
+
+Swagger allows you to explore the available endpoints, inspect request and response schemas, review validation requirements, and send API requests directly from the browser.
+
+For protected endpoints, use the Swagger **Authorize** control to provide a valid Bearer token.
+
+The Swagger specification is the primary reference for the complete endpoint list and its detailed request and response contracts.
+
+## API Overview
+
+The API supports the following functional areas:
+
+| Area | Capabilities |
+|---|---|
+| Authentication | Login and retrieve the authenticated user's identity. |
+| Employee profiles | Retrieve and update the current employee's profile and change their password. |
+| Employee administration | HR-only employee management. |
+| Attendance | Check-in, check-out, retrieve today's attendance, view history, and retrieve monthly summaries. |
+| HR reporting | Cross-employee attendance history, summaries, and overview reporting. |
+| Notifications | Retrieve HR notifications and manage their read state. |
+
+Examples of core routes include:
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/auth/login` | Authenticate an account. |
+| `GET` | `/auth/me` | Retrieve the authenticated user's identity. |
+| `GET` | `/employees/me` | Retrieve the current employee profile. |
+| `PATCH` | `/employees/me` | Update permitted profile fields. |
+| `PATCH` | `/employees/me/password` | Change the current user's password. |
+| `POST` | `/attendance/check-in` | Record a check-in. |
+| `POST` | `/attendance/check-out` | Record a check-out. |
+| `GET` | `/attendance/me/today` | Retrieve today's attendance status. |
+| `GET` | `/attendance/me/history` | Retrieve paginated attendance history. |
+| `GET` | `/attendance/me/summary` | Retrieve a monthly attendance summary. |
+
+Some endpoints require authentication and specific roles. Refer to Swagger for the complete route list, authorization requirements, query parameters, and error responses.
+
+## Authentication and Authorization
+
+The API uses JWT Bearer authentication for protected routes.
+
+The system defines two primary roles:
+
+- `EMPLOYEE` — Access to permitted employee-facing functionality, including personal profile and attendance operations.
+- `HR` — Access to authorized HR administration, employee management, and cross-employee attendance reporting.
+
+Access is enforced by the backend. Frontend route restrictions are not a substitute for API-side authorization.
+
+## Testing
+
+Automated tests are run with Vitest. End-to-end tests use the separate Vitest E2E configuration and can exercise HTTP behavior through Supertest.
+
+Run the unit and specification tests:
+
+```text
+npm run test
+```
+
+Run tests in watch mode:
+
+```text
+npm run test:watch
+```
+
+Run end-to-end tests:
+
+```text
+npm run test:e2e
+```
+
+Generate a test coverage report:
+
+```text
+npm run test:cov
+```
+
+Run the code linter:
+
+```text
+npm run lint
+```
+
+Format source and test files:
+
+```text
+npm run format
+```
+
+Build the application:
+
+```text
+npm run build
+```
+
+## Production Build
+
+Compile the application:
+
+```text
+npm run build
+```
+
+Start the compiled application:
+
+```text
+npm run start:prod
+```
+
+Before deploying, configure production environment variables, verify database connectivity, apply the appropriate database migrations, and configure the exact allowed frontend origins through `CORS_HR` and `CORS_EMPLOYEES`.
+
+Keep secrets in your hosting provider's environment configuration rather than in source control.
+
+## Audit Integration
+
+The backend integrates with the separate Dexa Audit application through RabbitMQ, using asynchronous events to communicate employee profile changes.
+
+### Employee Profile Change Events
+
+When an employee profile is updated, the backend can publish an `employee.profile.changed` event containing:
+
+| Field | Description |
+|---|---|
+| `eventId` | Unique event identifier generated using UUID. |
+| `eventType` | Event type: `employee.profile.changed`. |
+| `employeeId` | ID of the employee whose profile changed. |
+| `changedFields` | Names of the fields that changed. |
+| `occurredAt` | Event timestamp in ISO 8601 format. |
+
+Events are published to the `employee.profile.changed` RabbitMQ queue as JSON messages. The publisher uses a durable queue, persistent messages, and publisher confirmations to improve delivery reliability.
+
+### Dead-Letter Queue
+
+The integration declares a dead-letter queue named `employee.profile.changed.dead`. Messages rejected or dead-lettered according to RabbitMQ's queue behavior can be routed there for further inspection.
+
+### Configuration
+
+Configure `RABBITMQ_URL` to point to the RabbitMQ instance shared by the backend and the relevant consumer.
+
+The Dexa Audit application can consume these events to support its audit-recording workflow. The backend publishes profile-change events; audit-record persistence and event consumption are handled by the audit integration.
+
+This integration keeps audit-event communication separate from the main REST API request flow while providing a structured event contract for downstream processing.
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This repository is currently marked `UNLICENSED` in its package metadata. Contact the repository owner for permission and licensing details before redistributing or reusing the code.
