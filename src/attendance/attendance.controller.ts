@@ -199,7 +199,6 @@ export class AttendanceController {
     }
 
     @Get('me/history')
-
     @ApiOperation({
         summary: 'Get my attendance history',
         description:

@@ -1,6 +1,9 @@
 
 import { Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiPropertyOptional,
+  ApiQuery,
+} from '@nestjs/swagger';
 import {
   IsInt,
   IsOptional,
@@ -31,6 +34,7 @@ export class AttendanceHistoryQueryDto {
   to?: string;
 
   @ApiPropertyOptional({
+    type: Number,
     example: 1,
     minimum: 1,
     default: 1,
@@ -43,6 +47,7 @@ export class AttendanceHistoryQueryDto {
   page = 1;
 
   @ApiPropertyOptional({
+    type: Number,
     example: 10,
     minimum: 1,
     maximum: 100,

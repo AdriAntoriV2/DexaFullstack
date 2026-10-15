@@ -127,6 +127,8 @@ export class AttendanceService {
         attendanceDate: true,
         checkInAt: true,
         checkOutAt: true,
+        checkInStatus: true,
+        checkOutStatus: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -245,30 +247,28 @@ export class AttendanceService {
         : {}),
     };
 
-    const [records, total] = await this.prisma.$transaction([
-      this.prisma.attendance.findMany({
-        where,
-        orderBy: [
-          { attendanceDate: 'desc' },
-          { createdAt: 'desc' },
-        ],
-        skip: (page - 1) * limit,
-        take: limit,
-        select: {
-          id: true,
-          employeeId: true,
-          attendanceDate: true,
-          checkInAt: true,
-          checkOutAt: true,
-          checkInStatus: true,
-          checkOutStatus: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      }),
-      this.prisma.attendance.count({ where }),
-    ]);
+    const records = await this.prisma.attendance.findMany({
+      where,
+      orderBy: [
+        { attendanceDate: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        employeeId: true,
+        attendanceDate: true,
+        checkInAt: true,
+        checkOutAt: true,
+        checkInStatus: true,
+        checkOutStatus: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
+    const total = await this.prisma.attendance.count({ where });
     return {
       data: records.map((record) => this.serializeAttendance(record)),
       page,
