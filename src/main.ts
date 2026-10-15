@@ -28,10 +28,19 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);
 
+  const corsHr = process.env.CORS_HR?.trim();
+  const corsEmployees = process.env.CORS_EMPLOYEES?.trim();
+
+  if (!corsHr || !corsEmployees) {
+    throw new Error(
+      'Missing required environment variables: CORS_HR and CORS_EMPLOYEES must both be configured.',
+    );
+  }
+
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: [corsHr, corsEmployees],
   });
-  
+
   await app.listen(process.env.PORT ?? 3000);
 }
 
