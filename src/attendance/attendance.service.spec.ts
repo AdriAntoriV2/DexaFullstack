@@ -3,8 +3,14 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { AttendanceService } from './attendance.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -28,16 +34,24 @@ describe('AttendanceService', () => {
     attendanceDate: new Date('2026-10-14T00:00:00.000Z'),
     checkInAt: new Date('2026-10-14T01:00:00.000Z'),
     checkOutAt: null,
+    checkInStatus: 'EARLY' as const,
+    checkOutStatus: null,
     createdAt: new Date('2026-10-14T01:00:00.000Z'),
     updatedAt: new Date('2026-10-14T01:00:00.000Z'),
   };
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-14T03:00:00.000Z'));
     vi.resetAllMocks();
 
     service = new AttendanceService(
       prisma as unknown as PrismaService,
     );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('records a check-in', async () => {
@@ -92,6 +106,9 @@ describe('AttendanceService', () => {
         }),
         data: {
           checkOutAt: expect.any(Date),
+          checkOutStatus: expect.stringMatching(
+            /^(EARLY|ON_TIME|LATE)$/,
+          ),
         },
       }),
     );

@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   getJakartaDate,
+  getJakartaTimingStatus,
   toPrismaDate,
 } from './attendance-date.util.js';
 import type { AttendanceHistoryQueryDto } from './dto/attendance-history-query.dto.js';
@@ -26,6 +27,7 @@ export class AttendanceService {
           employeeId,
           attendanceDate,
           checkInAt: now,
+          checkInStatus: getJakartaTimingStatus(now, 8),
         },
         select: {
           id: true,
@@ -33,6 +35,8 @@ export class AttendanceService {
           attendanceDate: true,
           checkInAt: true,
           checkOutAt: true,
+          checkInStatus: true,
+          checkOutStatus: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -68,6 +72,7 @@ export class AttendanceService {
       },
       data: {
         checkOutAt: now,
+        checkOutStatus: getJakartaTimingStatus(now, 17),
       },
     });
 
@@ -85,6 +90,8 @@ export class AttendanceService {
           attendanceDate: true,
           checkInAt: true,
           checkOutAt: true,
+          checkInStatus: true,
+          checkOutStatus: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -144,6 +151,8 @@ export class AttendanceService {
         attendanceDate: true,
         checkInAt: true,
         checkOutAt: true,
+        checkInStatus: true,
+        checkOutStatus: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -163,8 +172,6 @@ export class AttendanceService {
       attendance: this.serializeAttendance(attendance),
     };
   }
-
-
 
   async getMyHistory(
     employeeId: string,
@@ -253,6 +260,8 @@ export class AttendanceService {
           attendanceDate: true,
           checkInAt: true,
           checkOutAt: true,
+          checkInStatus: true,
+          checkOutStatus: true,
           createdAt: true,
           updatedAt: true,
         },

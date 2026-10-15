@@ -33,6 +33,22 @@ export class AttendanceResponseDto {
   checkOutAt!: string | null;
 
   @ApiProperty({
+    enum: ['EARLY', 'ON_TIME', 'LATE'],
+    example: 'LATE',
+    nullable: true,
+    description: 'Check-in timing status based on 08:00 Asia/Jakarta.',
+  })
+  checkInStatus!: 'EARLY' | 'ON_TIME' | 'LATE' | null;
+
+  @ApiProperty({
+    enum: ['EARLY', 'ON_TIME', 'LATE'],
+    example: 'ON_TIME',
+    nullable: true,
+    description: 'Check-out timing status based on 17:00 Asia/Jakarta.',
+  })
+  checkOutStatus!: 'EARLY' | 'ON_TIME' | 'LATE' | null;
+
+  @ApiProperty({
     example: '2026-10-14T01:05:00.000Z',
   })
   createdAt!: string;
