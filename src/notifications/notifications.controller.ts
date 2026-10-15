@@ -1,6 +1,17 @@
-
-import { Controller, MessageEvent, Sse, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  MessageEvent,
+  Param,
+  Patch,
+  Sse,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -17,6 +28,30 @@ export class NotificationsController {
   constructor(
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Get recent HR notifications and unread count (HR only)',
+  })
+  list() {
+    return this.notificationsService.list();
+  }
+
+  @Patch('read-all')
+  @ApiOperation({
+    summary: 'Mark all HR notifications as read (HR only)',
+  })
+  markAllRead() {
+    return this.notificationsService.markAllRead();
+  }
+
+  @Patch(':id/read')
+  @ApiOperation({
+    summary: 'Mark an HR notification as read (HR only)',
+  })
+  markRead(@Param('id') id: string) {
+    return this.notificationsService.markRead(id);
+  }
 
   @Sse('stream')
   @ApiOperation({

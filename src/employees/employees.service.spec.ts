@@ -14,10 +14,18 @@ vi.mock('bcryptjs', () => ({
 
 import { EmployeesService } from './employees.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AuditPublisherService } from '../audit/audit-publisher.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 describe('EmployeesService', () => {
   let service: EmployeesService;
+  const auditPublisher = {
+    publishProfileChanged: vi.fn().mockResolvedValue(undefined),
+  };
 
+  const notificationsService = {
+    notifyProfileUpdated: vi.fn().mockResolvedValue(undefined),
+  };
   const prisma = {
     employee: {
       findMany: vi.fn(),
@@ -29,7 +37,15 @@ describe('EmployeesService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    service = new EmployeesService(prisma as unknown as PrismaService);
+
+    auditPublisher.publishProfileChanged.mockResolvedValue(undefined);
+    notificationsService.notifyProfileUpdated.mockResolvedValue(undefined);
+
+    service = new EmployeesService(
+      prisma as unknown as PrismaService,
+      auditPublisher as unknown as AuditPublisherService,
+      notificationsService as unknown as NotificationsService,
+    );
   });
 
   it('lists employees', async () => {

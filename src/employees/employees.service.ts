@@ -113,7 +113,10 @@ export class EmployeesService {
         id,
         changedFields,
       );
-        this.notificationsService.notifyProfileUpdated(id, changedFields);
+      await this.notificationsService.notifyProfileUpdated(
+        id,
+        changedFields,
+      );
     }
 
     return updated;
