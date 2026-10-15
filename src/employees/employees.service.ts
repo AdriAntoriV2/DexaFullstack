@@ -10,10 +10,25 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import type { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import type { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import type { UpdateMyProfileDto } from './dto/update-my-profile.dto.js';
+import { AuditPublisherService } from '../audit/audit-publisher.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class EmployeesService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditPublisher: AuditPublisherService,
+    private readonly notificationsService: NotificationsService,
+  ) { }
+
+  private getChangedFields(
+    current: Record<string, unknown>,
+    updates: Record<string, unknown>,
+  ): string[] {
+    return Object.keys(updates).filter(
+      (key) => current[key] !== updates[key],
+    );
+  }
 
   private readonly publicEmployeeSelect = {
     id: true,
@@ -81,13 +96,27 @@ export class EmployeesService {
     id: string,
     dto: UpdateMyProfileDto,
   ) {
-    await this.findById(id);
+    const current = await this.findById(id);
+    const changedFields = this.getChangedFields(
+      current,
+      dto as Record<string, unknown>,
+    );
 
-    return this.prisma.employee.update({
+    const updated = await this.prisma.employee.update({
       where: { id },
       data: dto,
       select: this.publicEmployeeSelect,
     });
+
+    if (changedFields.length > 0) {
+      await this.auditPublisher.publishProfileChanged(
+        id,
+        changedFields,
+      );
+        this.notificationsService.notifyProfileUpdated(id, changedFields);
+    }
+
+    return updated;
   }
 
   async updateByHr(

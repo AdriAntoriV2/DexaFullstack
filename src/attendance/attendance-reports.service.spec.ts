@@ -52,8 +52,8 @@ describe('AttendanceService reports', () => {
       limit: 10,
     });
 
-    expect(prisma.$transaction).toHaveBeenCalledOnce();
-    expect(result.page).toBe(2);
+    expect(prisma.attendance.findMany).toHaveBeenCalledOnce();
+    expect(prisma.attendance.count).toHaveBeenCalledOnce(); expect(result.page).toBe(2);
     expect(result.limit).toBe(10);
     expect(result.total).toBe(21);
     expect(result.totalPages).toBe(3);
@@ -117,7 +117,8 @@ describe('AttendanceService reports', () => {
     const expectedFrom = `${today.slice(0, 7)}-01`;
 
     expect(result.total).toBe(0);
-    expect(prisma.$transaction).toHaveBeenCalledOnce();
+    expect(prisma.attendance.findMany).toHaveBeenCalledOnce();
+    expect(prisma.attendance.count).toHaveBeenCalledOnce();
 
     const expectedWhere = {
       employeeId: 'employee-1',
