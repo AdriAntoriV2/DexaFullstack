@@ -7,9 +7,13 @@ import { randomUUID } from 'node:crypto';
 import { Observable, Subject } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+export type HrNotificationType =
+  | 'EMPLOYEE_PROFILE_UPDATED'
+  | 'EMPLOYEE_PASSWORD_CHANGED';
+
 export interface HrNotification {
   id: string;
-  type: 'EMPLOYEE_PROFILE_UPDATED';
+  type: HrNotificationType;
   employeeId: string;
   changedFields: string[];
   message: string;
@@ -93,19 +97,42 @@ export class NotificationsService {
   ): Promise<void> {
     if (changedFields.length === 0) return;
 
+    await this.createAndPublish({
+      type: 'EMPLOYEE_PROFILE_UPDATED',
+      employeeId,
+      changedFields,
+      message: 'An employee updated their profile.',
+    });
+  }
+
+  async notifyPasswordChanged(employeeId: string): Promise<void> {
+    await this.createAndPublish({
+      type: 'EMPLOYEE_PASSWORD_CHANGED',
+      employeeId,
+      changedFields: ['password'],
+      message: 'An employee changed their password.',
+    });
+  }
+
+  private async createAndPublish(input: {
+    type: HrNotificationType;
+    employeeId: string;
+    changedFields: string[];
+    message: string;
+  }): Promise<void> {
     const notification = await this.prisma.hrNotification.create({
       data: {
         id: randomUUID(),
-        type: 'EMPLOYEE_PROFILE_UPDATED',
-        employeeId,
-        changedFields,
-        message: 'An employee updated their profile.',
+        type: input.type,
+        employeeId: input.employeeId,
+        changedFields: input.changedFields,
+        message: input.message,
       },
     });
 
     this.events.next({
       id: notification.id,
-      type: 'EMPLOYEE_PROFILE_UPDATED',
+      type: input.type,
       employeeId: notification.employeeId,
       changedFields: notification.changedFields,
       message: notification.message,

@@ -1,4 +1,3 @@
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ConflictException,
@@ -19,13 +18,16 @@ import { NotificationsService } from '../notifications/notifications.service.js'
 
 describe('EmployeesService', () => {
   let service: EmployeesService;
+
   const auditPublisher = {
     publishProfileChanged: vi.fn().mockResolvedValue(undefined),
   };
 
   const notificationsService = {
     notifyProfileUpdated: vi.fn().mockResolvedValue(undefined),
+    notifyPasswordChanged: vi.fn().mockResolvedValue(undefined),
   };
+
   const prisma = {
     employee: {
       findMany: vi.fn(),
@@ -40,6 +42,7 @@ describe('EmployeesService', () => {
 
     auditPublisher.publishProfileChanged.mockResolvedValue(undefined);
     notificationsService.notifyProfileUpdated.mockResolvedValue(undefined);
+    notificationsService.notifyPasswordChanged.mockResolvedValue(undefined);
 
     service = new EmployeesService(
       prisma as unknown as PrismaService,
@@ -92,8 +95,7 @@ describe('EmployeesService', () => {
     ).rejects.toThrow(ConflictException);
   });
 
-
-  it('changes password when the current password is correct', async () => {
+  it('changes password and notifies HR when the current password is correct', async () => {
     prisma.employee.findUnique.mockResolvedValue({
       passwordHash: 'old-hash',
     });
@@ -118,13 +120,18 @@ describe('EmployeesService', () => {
       where: { id: 'employee-1' },
       data: { passwordHash: 'new-hash' },
     });
+    expect(notificationsService.notifyPasswordChanged).toHaveBeenCalledOnce();
+    expect(notificationsService.notifyPasswordChanged).toHaveBeenCalledWith(
+      'employee-1',
+    );
   });
 
-  it('rejects a password change when the current password is incorrect', async () => {
+  it('rejects a password change and does not notify HR when the current password is incorrect', async () => {
     prisma.employee.findUnique.mockResolvedValue({
       passwordHash: 'old-hash',
     });
     vi.mocked(compare).mockImplementation(async () => false);
+
     await expect(
       service.changeMyPassword(
         'employee-1',
@@ -134,6 +141,7 @@ describe('EmployeesService', () => {
     ).rejects.toThrow(UnauthorizedException);
 
     expect(prisma.employee.update).not.toHaveBeenCalled();
+    expect(notificationsService.notifyPasswordChanged).not.toHaveBeenCalled();
   });
 
   it('rejects a password change when the employee does not exist', async () => {
@@ -148,6 +156,6 @@ describe('EmployeesService', () => {
     ).rejects.toThrow(NotFoundException);
 
     expect(prisma.employee.update).not.toHaveBeenCalled();
+    expect(notificationsService.notifyPasswordChanged).not.toHaveBeenCalled();
   });
-
 });

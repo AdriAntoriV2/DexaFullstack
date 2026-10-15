@@ -180,6 +180,8 @@ export class EmployeesService {
       data: { passwordHash },
     });
 
+    await this.notificationsService.notifyPasswordChanged(id);
+
     return { message: 'Password changed successfully' };
   }
 
