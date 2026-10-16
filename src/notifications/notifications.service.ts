@@ -25,7 +25,7 @@ export interface HrNotification {
 export class NotificationsService {
   private readonly events = new Subject<HrNotification>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   stream(): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
@@ -97,20 +97,30 @@ export class NotificationsService {
   ): Promise<void> {
     if (changedFields.length === 0) return;
 
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: employeeId },
+      select: { fullName: true },
+    });
+
     await this.createAndPublish({
       type: 'EMPLOYEE_PROFILE_UPDATED',
       employeeId,
       changedFields,
-      message: 'An employee updated their profile.',
+      message: `${employee?.fullName ?? 'An employee'} updated their profile.`,
     });
   }
 
   async notifyPasswordChanged(employeeId: string): Promise<void> {
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: employeeId },
+      select: { fullName: true },
+    });
+
     await this.createAndPublish({
       type: 'EMPLOYEE_PASSWORD_CHANGED',
       employeeId,
       changedFields: ['password'],
-      message: 'An employee changed their password.',
+      message: `${employee?.fullName ?? 'An employee'} changed their password.`,
     });
   }
 
