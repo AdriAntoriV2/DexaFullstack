@@ -405,6 +405,7 @@ export class AttendanceService {
             select: {
               companyEmail: true,
               fullName: true,
+              photoUrl: true
             },
           },
         },
